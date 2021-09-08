@@ -1,5 +1,23 @@
 
-rm(list=ls())
+suppressPackageStartupMessages(library("optparse"))
+
+option_list <- list(
+  make_option(c("-a", "--sibs"), type = "double", help = "sibs"),
+  make_option(c("-b", "--cousin1"), type = "double", help = "1st cousin prop"),
+  make_option(c("-c", "--cousin2"), type = "double", help = "2nd cousin prop"),
+  make_option(c("-d", "--cousin3"), type = "double", help = "3rd cousin prop"),
+
+  make_option(c("-t", "--texact"), type = "double", default = 10, help = "max_T_exact_model"),
+  make_option(c("-s", "--kinship_scale"), type = "double", default = 1, help = "scaling factor for kinship"),
+  make_option(c("-k", "--okinship"), type = "double", default = 0, help = "old kinship (before t)"),
+  make_option(c("-p", "--pop"), type = "integer", default = 1, help = "which population to use (1 = pathan, 2 = jatt)"),
+  make_option(c("-n", "--ne"), type = "integer", default = 1, help = "ne trajectory (1,2,3) or constant ne(>3)"),
+  make_option(c("-o", "--output", type = "character", help = "path to output directory", default = "output/"))
+)
+
+args <- parse_args(OptionParser(option_list = option_list))
+
+#rm(list=ls())
 #setwd("/lustre/scratch115/projects/autozyg/BiB/code_for_popgen_paper")
 min.cm=5
 max.cm=30
@@ -13,30 +31,36 @@ max.cm=30
 #ibdne.new=read.delim('IBDNe_HomogeneousGroups_from_fineSTRUCTURE.with_brute_force_plus_HLA_plus_centromere_filtering.txt',header=T, as.is=T)
 ibdne.new = read.delim('/Users/Azaidi/endogamy/data/BiB_CoreExome_IBDNe_different_FROH_filters_Dec20.txt', header = T, as.is = T)
 
-args <- commandArgs(trailingOnly = TRUE)
+#args <- commandArgs(trailingOnly = TRUE)
 
 #rates vector (sibs, 1st cousins, 2nd cousins, 3rd cousins)
-rates = as.numeric(c(args[1], args[2], args[3], args[4]))
+#rates = as.numeric(args[ c(2 : length(args) ) ])
+rates = c(args$sibs, args$cousin1, args$cousin2, args$cousin3)
+rates_name = paste(rates, collapse="_")
 
 # Specify the number of generations during which we run the exact model
 #max_T_exact_model = as.numeric(args[1])
-max_T_exact_model = 10
+#max_T_exact_model = 10
+max_T_exact_model = args$texact
 
 #specify the kinship prior to max_T_exact_model
 #old.kinship = as.numeric(args[2])
-old.kinship = 0
+#old.kinship = 0
+old.kinship = args$okinship
 
 #specify which model of recent kinship you want to use
 #which.recent.consang=as.numeric(args[3])
-which.recent.consang = 1 #scaling factor to increase kinship
+#which.recent.consang = 1 #scaling factor to increase kinship
+which.recent.consang = args$kinship_scale
 
 #define which Ne trajectory you will use
 #which.ne.trajectory=as.numeric(args[4])
-which.ne.trajectory = 1
+which.ne.trajectory = args$ne
 
 #define which population you are going to model
-#which.pop=as.numeric(args[5])
-which.pop = 0 #Jatt
+#which.pop=as.numeric(args[1])
+#which.pop = 1 #Jatt
+which.pop = args$pop
 
 # This is the maximal generation to track when computing the distribution of the TMRCA
 max_T_coal = 45055 # Just need to be large. We set this to be the number of generations back in time that the SMC++ estimates of population size in the HGDP paper go.
@@ -50,7 +74,7 @@ ibdne.pop$t=ibdne.pop$GEN+1
 } else {
 pop="Jatt/Choudhry"
 pop.label="JattChoudhry_in_cluster_10"
-ibdne.pop=ibdne.new[ibdne.new$pop=="Jatt/Choudhry" & ibdne.new$GEN<50,]
+ibdne.pop=ibdne.new[ibdne.new$pop=="Choudhry_Jatt" & ibdne.new$GEN<50,]
 ibdne.pop$t=ibdne.pop$GEN+1
 }
 
@@ -79,10 +103,11 @@ if(which.ne.trajectory==3){
 }
 if(which.ne.trajectory>3){
 ### use a constant value for t>0
-    constant.ne.values=c(1e3,5e3,10e3,20e3,30e3,40e3,50e3,100e3,6e3,7e3,8e3,9e3) ### can change this to include any constant Ne value you want
-    my.constant.ne=constant.ne.values[which.ne.trajectory-3]
-    historic.ne[[pop]][,2]=my.constant.ne
-    ne.label=paste("constant_Ne_",my.constant.ne/1e3,"k",sep="")
+    #constant.ne.values=c(1e3,5e3,10e3,20e3,30e3,40e3,50e3,100e3,6e3,7e3,8e3,9e3) ### can change this to include any constant Ne value you want
+    #my.constant.ne=constant.ne.values[which.ne.trajectory-3]
+    #historic.ne[[pop]][,2]=my.constant.ne
+    historic.ne[[pop]][,2] = which.ne.trajectory
+    ne.label=paste("constant_Ne_",which.ne.trajectory/1e3,"k",sep="")
 }
 
 ### set the average kinship between spouses to be used for t<=max_T_exact_model
@@ -148,4 +173,4 @@ save.output[["max_T_coal"]]=max_T_coal
 save.output[["max_T_exact_model"]]= max_T_exact_model
 
 # Save the output
-save(save.output,file=paste("output/output.",label,".RData",sep=""))
+save(save.output,file=paste(args$output,"/output.",label,"_r",rates_name,".RData",sep=""))

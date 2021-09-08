@@ -20,11 +20,11 @@ get_N = function(t)
 # etc., where the vector can be made arbitraily long.
 # Note that we only model full relatives (i.e., no half-sibs)
 # Also note that these events are mutually exclusive
-# So, with probability 1-sum(rates), the spouses are unrelated in the 
+# So, with probability 1-sum(rates), the spouses are unrelated in the
 # past length(rates) generations.
 # The kinship coefficient implied by these rates should be equal
 # to the kinship coefficient defined above for the time period 1-max_T_exact_model generations.
-rates = c(0.1,0.2,0.3)
+#rates = c(0.1,0.2,0.3)
 
 # For genrations "max_T_exact_model" and beyond, we will use a simpler approximation
 # Implement this function according to the consanguinity rates
@@ -44,7 +44,7 @@ get_q = function(t)
 # Demonstrate how to plot the distribution of segment lengths
 ells = seq(3,50,by=0.1)
 
-# res = calc_ell_dist(ells,get_N,rates,get_q)
+#res = calc_ell_dist(ells,get_N,rates,get_q)
 ell_dist_within = res$dist_within
 ell_dist_between = res$dist_between
 ell_shared_within = res$shared_within
